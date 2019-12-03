@@ -62,3 +62,6 @@ about data-loss.
 Whilst the app is able to keep the `whitelist.json` file up to date, your Minecraft server instance still needs to
 reload the whitelist for these changes to take effect. Most server hosts provide a tasks feature that can be used to
 automatically run a `whitelist reload` command. (You might also be able to achieve this through plugins).
+
+Once everything is set up you can run the set of integration tests using `pipenv run pytest` to check everything is
+working fine.
