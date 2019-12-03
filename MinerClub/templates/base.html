@@ -7,18 +7,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 </head>
 <body>
-<div class="container" style="margin-top: 10px">
-    <div class="card">
-        <h5 class="card-header">{{ title }}</h5>
-        <div class="card-body">
+<div class="container-fluid">
+    <div class="container" style="margin-top: 10px;margin-bottom: 10px">
+        <div class="card">
+            <h5 class="card-header">{{ title }}</h5>
+            <div class="card-body">
 {% block body %}{% endblock %}
-        </div>
-        <div class="card-footer">
-            <a href="{{ url_for('home') }}" class="card-link">Home</a>
-            <a href="{{ url_for('activate') }}" class="card-link">Activate</a>
-            <a href="{{ url_for('register') }}" class="card-link">Register</a>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('home') }}" class="card-link">Home</a>
+                <a href="{{ url_for('activate') }}" class="card-link">Activate</a>
+                <a href="{{ url_for('register') }}" class="card-link">Register</a>
+            </div>
         </div>
     </div>
+<div class="container"><a href="https://github.com/0Hughman0/MinerClub">A Miner Club Website</a></div>
 </div>
 </body>
 </html>
