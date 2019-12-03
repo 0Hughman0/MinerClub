@@ -8,7 +8,7 @@ class Base:
     SQLALCHEMY_DATABASE_URI = "sqlite:///database.db"
 
     ACCESS_CODE = os.environ['ACCESS_CODE']
-    QUOTA = 4  # includes member!
+    QUOTA = int(os.environ['QUOTA'])
     CODE_HASH = os.environ['CODE_HASH'].encode()
 
     SERVER_IP = os.environ['SERVER_IP']

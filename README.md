@@ -1,9 +1,13 @@
 # Miner Club
 
-Miner Club is a ready made webapp built to help people run Minecraft servers with access limited to those within the 'club'
+Miner Club is a ready made web app built to help people run Minecraft servers with access limited to those within the 'club'
 and a limited number of guests.
 
-From the list of registered Minecraft usernames Miner Club generates a whitelist automatically and then syncs this
+Users first activate their accounts, verifying their identity by providing an access code.
+
+After this, an email is sent to them with a unique link that allows them and a defined quota of users to add their names to the whitelist.
+
+The list of registered Minecraft usernames Miner Club generates a whitelist automatically and then syncs this
 whitelist with a remove server over FTP.
 
 ## Getting started
@@ -16,6 +20,7 @@ whitelist with a remove server over FTP.
 | variable name  | form                        | description                                                                                     |
 |----------------|-----------------------------|-------------------------------------------------------------------------------------------------|
 | SERVER_IP      | IP:HOST                     | The IP address of your Minecraft server                                                         |
+| QUOTA          |                             | The number of whitelist entries each member is allowed (including the member)                   |
 | FTP_IP         | IP                          | The IP address of the FTP server (probably the same as server!)                                 |
 | FTP_USER       |                             | Username to authenticate FTP with.                                                              |
 | FTP_PASSWORD   |                             | Password to authenticate FTP with.                                                              |

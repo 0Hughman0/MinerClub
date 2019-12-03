@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 echo "Setting Env Variables"
 export SERVER_IP=IP:HOST
+export QUOTA=4
 export FTP_IP=IP
 export FTP_USER=XXX
 export FTP_PASSWORD=XXX
