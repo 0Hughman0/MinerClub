@@ -37,7 +37,7 @@ whitelist with a remove server over FTP.
 this to be a list of emails (and then set `EMAIL_TEMPLATE={}`).
 6. Make any changes you want to the template files, in particular the email templates and the privacy policy template.
 7. Set the environment vairable `FLASK_APP=MinerClub:app`
-8. Initialise the database by entering `pipenv run flask init-db`
+8. Initialise the database by entering `pipenv run flask init`
 8. Run the server using your preferred method. Note that I thoroughly recommend using https in order to ensure security.
 9. Set your Minecraft server to refresh the whitelist regularly.
 
