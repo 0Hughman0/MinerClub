@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+    <div class="alert alert-danger" role="alert">
+        Please note that that any mistakes activating your account have to be fixed manually, so please make sure details are entered correctly.
+    </div>
+    <form>
+        <div class="form-group">
+            <div class="form-group">
+            <label>Access Code:</label>
+            <input class="form-control" type="text" name="code">
+            <label>Membership ID:</label>
+            <input class="form-control" type="text" name="member_id">
+            </div>
+            <input type="submit" class="btn btn-primary" value="Activate" formmethod="post">
+        </div>
+    </form>
+        For information on what is done with the data you enter see the <a href="{{ url_for('privacy') }}">privacy policy</a>
+{% endblock %}

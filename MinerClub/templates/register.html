@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block body %}
+    <div class="alert alert-danger" role="alert">
+        Please note that that any mistakes in registering have to be fixed manually, so please make sure details are entered correctly.
+    </div>
+
+    <form>
+        <div class="form-group">
+            <div class="form-group">
+                <label>Sponsor Code:</label>
+                <input class="form-control" type="text" name="sponsor_code" value="{{ sponsor_code }}"><br>
+                <label>Your Email:</label><br>
+                <input type="email" class="form-control" name="email"><br>
+                <label>Minecraft Username:</label><br>
+                <input class="form-control" type="text" name="username"><br>
+            </div>
+            <input class="btn btn-primary" type="submit" value="Register" formmethod="post">
+        </div>
+    </form>
+    For information on what is done with the data you enter see the <a href="{{ url_for('privacy') }}">privacy policy</a>
+{% endblock %}

@@ -1,0 +1,20 @@
+Hi {{email}},
+
+Your Minecraft username "{{username}}" has successfully been added to the {{ club_name }} server whitelist.
+
+To join the server, simply load up Minecraft with the latest release, select 'Multiplayer', select 'Add Server', put
+whatever you want in the 'Server Name' box, and put {{server_ip}} in the 'Server Address' box.
+
+Please feel free to pop by and join our server's dedicated discord channel here:
+
+{{discord_url}}
+
+By joining the server you are agreeing to obey the rules:
+
+Breaching of any of the above rules may result in a permanent ban for that user and their associated Darwinian.
+
+If you have any problems, please just the admin at {{ admin_email }}.
+
+All the best,
+
+{{ admin_name }}

@@ -1,0 +1,22 @@
+Hi {{ member_id}},
+
+Amazing, you've activated your account for the {{ club_name }}'s Minecraft Server!
+
+To stop non-members from joining the server, it operates a whitelist (like a guestlist) that
+only allows Minecraft players with certain usernames to join.
+
+All you need to do to add yourself to the whitelist is to follow this link:
+
+{{ register_url }}
+
+And fill it in!
+
+This link allows up to {{quota}} people to signup (including you), so feel free to share it with any non-member friends who might want to join.
+
+The link is unique to you, so please don't send it around willy-nilly!
+
+If you have any problems, please just the admin at {{ admin_email }}.
+
+All the best,
+
+{{ admin_name }}

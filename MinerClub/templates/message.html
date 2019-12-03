@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block body %}
+{% if good %}
+<div class="alert alert-success" role="alert">
+    {{ good }}
+</div>
+{% elif bad %}
+<div class="alert alert-danger" role="alert">
+    {{ bad }}
+</div>
+{% endif %}
+{% endblock %}

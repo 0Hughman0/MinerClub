@@ -1,0 +1,17 @@
+Hi {{ member_id }},
+
+Just to let you know a new player registered for the {{ club_name }} server with account name "{{username}}" using your link.
+
+Hopefully this is as you'd expect! If not, please let your administrator know!
+
+You have {{left}} whitelist entries left.
+
+The current usernames you have on whitelist are:
+
+{% for user in users %}-> "{{ user.username }}"
+{% endfor %}
+If you have any problems, please just the admin at {{ admin_email }}.
+
+All the best,
+
+{{ admin_name }}
