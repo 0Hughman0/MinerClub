@@ -1,4 +1,4 @@
-! Miner Club
+# Miner Club
 
 Miner Club is a ready made webapp built to help people run Minecraft servers with access limited to those within the 'club'
 and a limited number of guests.
@@ -6,7 +6,7 @@ and a limited number of guests.
 From the list of registered Minecraft usernames Miner Club generates a whitelist automatically and then syncs this
 whitelist with a remove server over FTP.
 
-! Getting started
+## Getting started
 
 1. Clone (or download and unzip) this repo! `git clone https://github.com/0Hughman0/MinerClub`
 2. Navigate into the directory with `Pipfile` in it.
@@ -41,7 +41,7 @@ this to be a list of emails (and then set `EMAIL_TEMPLATE={}`).
 8. Run the server using your preferred method. Note that I thoroughly recommend using https in order to ensure security.
 9. Set your Minecraft server to refresh the whitelist regularly.
 
-! Additional Helpers
+## Additional Helpers
 
 The app provides the following additional commands (ran by `flask command-name`):
 
@@ -51,7 +51,7 @@ The app provides the following additional commands (ran by `flask command-name`)
 To assist with any manual changes, the app provides both the `get_shell.bat` and `get_shell.sh` scripts. Once in a shell
 you can use `from st import *` to import a few helper functions/ variables.
 
-! Notes
+## Notes
 
 Don't run this server if you don't know what you're doing, you are storing peoples emails, so this needs to be done
 securely.
