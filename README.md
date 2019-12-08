@@ -48,13 +48,13 @@ this to be a list of emails (and then set `EMAIL_TEMPLATE={}`).
 
 ## Additional Helpers
 
-The app provides the following additional commands (ran by `flask command-name`):
+The app provides the following additional commands (ran by `pipenv run flask command-name`):
 
 * `reset-db` - This completely clears the database.
 * `force-sync` - This forces the app to sync the current whitelist version with the server (useful if making manual changes)
 
-To assist with any manual changes, the app provides both the `get_shell.bat` and `get_shell.sh` scripts. Once in a shell
-you can use `from st import *` to import a few helper functions/ variables.
+To assist with any manual changes, the app provides both the (get shell) `gs.bat` and `gs.sh` scripts. Once in a shell
+you can use (shell tools) `from st import *` to import a few helper functions/ variables.
 
 ## Notes
 

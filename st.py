@@ -12,3 +12,10 @@ def u(member_id):
 
 def w(username):
     return Whitelist.query.get(username)
+
+
+def summarise():
+    for user in users:
+        print("User {}:".format(user))
+        for entry in user.users:
+            print("\tGuest: {}".format(entry))

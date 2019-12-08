@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
 import click
 
-from .emailer import make_activation_email, send_register_email, send_registration_alert_email
+from .emailer import make_activation_email, make_register_email, make_registration_alert_email
 from .config import Product, Messages
 from .mccontrol import get_mj_id, update_whitelist
 from .membership import is_member
@@ -20,10 +20,12 @@ mail = Mail(app)
 class Member(db.Model):
     id = db.Column(db.String, primary_key=True)
     sponsor_code = db.Column(db.String)
+    email = db.Column(db.String)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.sponsor_code = self.make_code()
+        self.email = self.make_email()
 
     @property
     def quota(self):
@@ -32,12 +34,15 @@ class Member(db.Model):
     def make_code(self):
         sha = hashlib.sha256()
         sha.update(app.config['CODE_HASH'])
-        sha.update(self.id.encode())
+        for _ in range(10):
+            sha.update(self.id.encode())
         return sha.hexdigest()
 
-    @property
-    def email(self):
+    def make_email(self):
         return app.config['EMAIL_TEMPLATE'].format(self.id)
+
+    def send_activate_email(self):
+        mail.send(make_activation_email(self))
 
 
 class Whitelist(db.Model):
@@ -58,6 +63,10 @@ class Whitelist(db.Model):
     def to_dict(self):
         return {'uuid': "{}{}{}{}{}{}{}{}-{}{}{}{}-{}{}{}{}-{}{}{}{}-{}{}{}{}{}{}{}{}{}{}{}{}".format(*self.id),
                 'name': self.username}
+
+    def send_register_emails(self):
+        mail.send(make_register_email(self))
+        mail.send(make_registration_alert_email(self))
 
 
 @app.route('/')
@@ -82,7 +91,7 @@ def activate():
         u = Member(id=member_id)
         db.session.add(u)
 
-        mail.send(make_activation_email(u))
+        u.send_activate_email()
 
         db.session.commit()
 
@@ -118,8 +127,7 @@ def register():
         w = Whitelist(username=username, sponsor=sponsor, id=mj_id, email=email)
         db.session.add(w)
 
-        mail.send(send_register_email(w))
-        mail.send(send_registration_alert_email(w))
+        w.send_register_emails()
 
         db.session.commit()
         update_whitelist(Whitelist)

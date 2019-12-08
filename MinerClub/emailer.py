@@ -15,7 +15,7 @@ def make_activation_email(person):
     return make_email(person.email, Messages.ACTIVATION_SUBJECT, text)
 
 
-def send_register_email(whitelist_entry):
+def make_register_email(whitelist_entry):
     text = render_template('registration_email.txt',
                            email=whitelist_entry.email,
                            username=whitelist_entry.username,
@@ -26,7 +26,7 @@ def send_register_email(whitelist_entry):
     return make_email(whitelist_entry.email, Messages.REGISTRATION_SUBJECT, text)
 
 
-def send_registration_alert_email(whitelist_entry):
+def make_registration_alert_email(whitelist_entry):
     spons = whitelist_entry.sponsor
     text = render_template('registration_alert_email.txt',
                            member_id=spons.id,
