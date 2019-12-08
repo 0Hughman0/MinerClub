@@ -2,6 +2,7 @@ import time
 import json
 import shutil
 from pathlib import Path
+import os
 
 import pytest
 from flask import render_template
@@ -189,6 +190,11 @@ def test_database_cli(client):
 
         assert len(Member.query.all()) == 0
         assert len(Whitelist.query.all()) == 0
+
+        db.session.close()
+        os.remove(database.as_posix())
+
+        assert database.exists() is False
 
         if moved:
             shutil.move(hiddenplace, database)
