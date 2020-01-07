@@ -42,6 +42,20 @@ def read_file(filename):
     return stream.getvalue().decode('utf-8')
 
 
+def load_dir(path, files=None, ftp=None):
+    if files is None:
+        files = {}
+
+    if ftp is None:
+        ftp = FTP()
+        ftp.connect(current_app.config['FTP_ADDRESS'])
+        ftp.login(user=current_app.config['FTP_USER'], passwd=current_app.config['FTP_PASSWORD'])
+
+    path = Path(current_app.config['FTP_BASEDIR']) / path
+
+    ftp.nlst(path)
+
+
 def update_whitelist(whitelist):
     data = whitelist.serialise()
     write_file(current_app.config['WHITELIST_FILE'], json.dumps(data, indent=4))

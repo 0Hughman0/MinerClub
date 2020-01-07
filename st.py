@@ -7,10 +7,24 @@ whitelist = Whitelist.query.all()
 
 
 def u(member_id):
+    """
+    Get member by id
+    """
     return Member.query.get(member_id)
 
 
+def from_code(code):
+    """
+    Get member by sponsor code
+    """
+
+    return Member.query.filter(Member.sponsor_code == code).first()
+
+
 def w(username):
+    """
+    Get whitelist entry by username
+    """
     return Whitelist.query.get(username)
 
 

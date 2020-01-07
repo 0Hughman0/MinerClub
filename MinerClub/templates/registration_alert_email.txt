@@ -1,17 +1,17 @@
-Hi {{ member_id }},
+Hi {{ sponsor.id }},
 
-Just to let you know a new player registered for the {{ club_name }} server with account name "{{username}}" using your link.
+Just to let you know a new player registered for the {{ config['CLUB_NAME'] }} server with account name "{{ entry.username }}" using your link.
 
 Hopefully this is as you'd expect! If not, please let your administrator know!
 
-You have {{left}} whitelist entries left.
+You have {{ sponsor.quota }} whitelist entries left.
 
 The current usernames you have on whitelist are:
 
-{% for user in users %}-> "{{ user.username }}"
+{% for user in sponsor.users %}-> "{{ user.username }}"
 {% endfor %}
-If you have any problems, please just the admin at {{ admin_email }}.
+If you have any problems, please just the admin at {{ config['ADMIN_EMAIL'] }}.
 
 All the best,
 
-{{ admin_name }}
+{{ config['ADMIN_NAME'] }}

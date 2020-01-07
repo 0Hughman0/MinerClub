@@ -1,23 +1,23 @@
 import time
 import json
-import shutil
 from pathlib import Path
 import os
+import subprocess
+import tempfile
 
 import pytest
 from flask import render_template
 
-from MinerClub import app, db, mail
+from MinerClub import mail, app, db
 from MinerClub.config import Debug, Messages, Product
 from MinerClub.site import Member, Whitelist, init_db, reset_db, force_sync
-
 from MinerClub.membership import is_member
 from MinerClub.mccontrol import write_file, read_file
 
 
 app.config.from_object(Debug)
-db.init_app(app)
 mail.init_app(app)
+db.init_app(app)
 
 test_mj_resp = [{"uuid": "f8cdb683-9e90-43ee-a819-39f85d9c5d69", "name": "mollstam"},
                 {"uuid": "7125ba8b-1c86-4508-b92b-b5c042ccfe2b", "name": "KrisJelbring"}]
@@ -51,12 +51,28 @@ def register(client, sponsor_code, email, username):
 
 @pytest.fixture
 def client():
-    db.drop_all()
     db.create_all()
-    db.session.commit()
-
     with app.test_client() as client:
         yield client
+    db.drop_all()
+    db.engine.dispose()
+    os.remove(app.config['DATABASE_FILE'])
+
+
+@pytest.fixture
+def temp_ftp():
+    temp_dir = tempfile.TemporaryDirectory()
+    process = subprocess.Popen(['python', '-m', 'pyftpdlib',
+                                '-n', '127.0.0.1',
+                                '-d', temp_dir.name,
+                                '-p', str(app.config['FTP_PORT']),
+                                '-u', app.config['FTP_USER'],
+                                '-P', app.config['FTP_PASSWORD'],
+                                '-w'])
+    yield process
+
+    del temp_dir
+    process.terminate()
 
 
 class ConfigSetter:
@@ -112,7 +128,7 @@ def test_activate(client):
     assert user.email == app.config['EMAIL_TEMPLATE'].format(good_member)
 
 
-def test_register(client):
+def test_register(client, temp_ftp):
     resp = activate(client, good_memb_code, good_member)
     resp = register(client, bad_sponse_code, good_email, good_mc_user)
 
@@ -148,7 +164,8 @@ def test_register(client):
     assert json.loads(read_file(app.config['WHITELIST_FILE'])) == test_mj_resp
 
 
-def test_ftp():
+def test_ftp(temp_ftp):
+    # Todo - setup temporary test FTP server for testing
     test_text = f"Definitely did work {time.time()}"
 
     with app.app_context():
@@ -160,48 +177,24 @@ def test_ftp():
     assert back == test_text
 
 
-def test_database_cli(client):
-    with ConfigSetter('Product'):
-        database = Path('MinerClub/database.db')
-        hiddenplace = Path('tests/database.db')
-        moved = False
-        if database.exists():
-            shutil.move(database, hiddenplace)
-            moved = True
+def test_database_cli(client, temp_ftp):
+    database = Path(app.config['SQLALCHEMY_DATABASE_URI'])
 
-        assert database.exists() is False
-
-        runner = app.test_cli_runner()
-
-        runner.invoke(init_db)
-
-        assert database.exists() is True
-
-        resp = activate(client, app.config['ACCESS_CODE'], good_member)
-
-        user = Member.query.get(good_member)
-
-        resp = register(client, user.sponsor_code, good_email, good_mc_user)
-
-        assert len(Member.query.all()) > 0
-        assert len(Whitelist.query.all()) > 0
-
-        runner.invoke(reset_db)
-
-        assert len(Member.query.all()) == 0
-        assert len(Whitelist.query.all()) == 0
-
-        db.session.close()
-        os.remove(database.as_posix())
-
-        assert database.exists() is False
-
-        if moved:
-            shutil.move(hiddenplace, database)
-
-
-def test_other_cli(client):
     runner = app.test_cli_runner()
+
+    resp = activate(client, app.config['ACCESS_CODE'], good_member)
+
+    user = Member.query.get(good_member)
+
+    resp = register(client, user.sponsor_code, good_email, good_mc_user)
+
+    assert len(Member.query.all()) > 0
+    assert len(Whitelist.query.all()) > 0
+
+    runner.invoke(reset_db)
+
+    assert len(Member.query.all()) == 0
+    assert len(Whitelist.query.all()) == 0
 
     resp = activate(client, '', good_member)
 

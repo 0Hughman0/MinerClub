@@ -1,11 +1,13 @@
 import os
-
+import pathlib
+import tempfile
 
 class Base:
     CLUB_NAME = os.environ['CLUB_NAME']
     FLASK_DEBUG = False
 
-    SQLALCHEMY_DATABASE_URI = "sqlite:///database.db"
+    DATABASE_FILE = 'database.db'
+    SQLALCHEMY_DATABASE_URI = "sqlite:///" + DATABASE_FILE
 
     ACCESS_CODE = os.environ['ACCESS_CODE']
     QUOTA = int(os.environ['QUOTA'])
@@ -38,8 +40,14 @@ class Base:
 class Debug(Base):
     TESTING = True
     FLASK_DEBUG = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+
+    DATABASE_FILE = pathlib.Path(tempfile.gettempdir()) / "database.db"
+    SQLALCHEMY_DATABASE_URI = "sqlite:///" + DATABASE_FILE.as_posix()
+
     ACCESS_CODE = ""
+
+    FTP_ADDRESS = "localhost"
+    FTP_BASEDIR = ''
 
     MAIL_SENDER = ("Testing {}".format(Base.CLUB_NAME), Base.MAIL_USERNAME)
     WHITELIST_FILE = 't-whitelist.json'
