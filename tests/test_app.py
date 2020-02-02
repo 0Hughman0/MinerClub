@@ -8,11 +8,12 @@ import tempfile
 import pytest
 from flask import render_template
 
+
 from MinerClub import mail, app, db
-from MinerClub.config import Debug, Messages, Product
-from MinerClub.site import Member, Whitelist, init_db, reset_db, force_sync
+from MinerClub.config import Debug, Messages
+from MinerClub.site import Member, Whitelist, init_db, reset_db, force_sync, backup
 from MinerClub.membership import is_member
-from MinerClub.mccontrol import write_file, read_file
+from MinerClub.mccontrol import write_file, read_file, copy_dir, get_host, get_now
 
 
 app.config.from_object(Debug)
@@ -62,40 +63,23 @@ def client():
 @pytest.fixture
 def temp_ftp():
     temp_dir = tempfile.TemporaryDirectory()
+    base_dir = os.path.join(temp_dir.name, app.config['FTP_BASEDIR'])
+    os.mkdir(base_dir)
+    sub_dir = os.path.join(base_dir, 'subdir')
+    os.mkdir(sub_dir)
     process = subprocess.Popen(['python', '-m', 'pyftpdlib',
                                 '-n', '127.0.0.1',
                                 '-d', temp_dir.name,
                                 '-p', str(app.config['FTP_PORT']),
-                                '-u', app.config['FTP_USER'],
+                                '-u', app.config['FTP_USERNAME'],
                                 '-P', app.config['FTP_PASSWORD'],
                                 '-w'])
-    yield process
+
+    with app.app_context():
+        yield process, get_host()
 
     del temp_dir
     process.terminate()
-
-
-class ConfigSetter:
-
-    def __init__(self, name):
-        configs = {'Debug': Debug,
-                   'Product': Product}
-        self.temp_conf = configs[name]
-
-    def set_config(self, config):
-        if isinstance(config, dict):
-            app.config.update(config)
-        else:
-            app.config.from_object(config)
-        db.init_app(app)
-        mail.init_app(app)
-
-    def __enter__(self):
-        self.old_config = app.config.copy()
-        self.set_config(self.temp_conf)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.set_config(self.old_config)
 
 
 def test_member():
@@ -116,10 +100,11 @@ def test_activate(client):
 
     assert resp == render_template("message.html",
                                    good=Messages.ACTIVATE_SUCCESS.format(
-                                       email=app.config['EMAIL_TEMPLATE'].format(good_member)))
+                                   email=app.config['EMAIL_TEMPLATE'].format(good_member)))
 
     assert len(outbox) == 1
     assert outbox[0].subject == Messages.ACTIVATION_SUBJECT
+    assert '{{' not in outbox[0].body
 
     user = Member.query.get(good_member)
 
@@ -146,6 +131,8 @@ def test_register(client, temp_ftp):
     assert len(outbox) == 2
     assert outbox[0].subject == Messages.REGISTRATION_SUBJECT
     assert outbox[1].subject == Messages.REGISTRATION_ALERT_SUBJECT
+    assert '{{' not in outbox[0].body
+    assert '{{' not in outbox[1].body
 
     assert resp == render_template("message.html", good=Messages.REGISTER_SUCCESS.format(email=good_email))
 
@@ -161,23 +148,36 @@ def test_register(client, temp_ftp):
 
     assert user.quota == app.config['QUOTA'] - 2
 
-    assert json.loads(read_file(app.config['WHITELIST_FILE'])) == test_mj_resp
+    assert json.loads(read_file(app.config['FTP_WHITELIST_PATH'])) == test_mj_resp
 
 
 def test_ftp(temp_ftp):
-    # Todo - setup temporary test FTP server for testing
+    _, host = temp_ftp
+
     test_text = f"Definitely did work {time.time()}"
+    sub_test_text = test_text + ' SUB'
 
-    with app.app_context():
-        write_file("test.txt", test_text)
+    write_file("basedir/test.txt", test_text)
+    assert read_file("basedir/test.txt") == test_text
+    assert set(host.listdir('basedir')) == {'test.txt', 'subdir'}
 
-    with app.app_context():
-        back = read_file("test.txt")
+    sub_file = 'basedir/subdir/subtest.txt'
 
-    assert back == test_text
+    write_file(sub_file, sub_test_text)
+    assert read_file(sub_file) == sub_test_text
+    assert set(host.listdir('basedir/subdir')) == {'subtest.txt'}
+
+    to_dir = tempfile.TemporaryDirectory()
+    to_path = Path(to_dir.name)
+
+    copy_dir('', to_path)
+
+    assert (to_path / 'basedir/test.txt').read_text() == test_text
+    assert (to_path / 'basedir/subdir/subtest.txt').read_text() == sub_test_text
 
 
-def test_database_cli(client, temp_ftp):
+def test_cli(client, temp_ftp):
+    _, host = temp_ftp
     database = Path(app.config['SQLALCHEMY_DATABASE_URI'])
 
     runner = app.test_cli_runner()
@@ -212,8 +212,26 @@ def test_database_cli(client, temp_ftp):
     db.session.add(w)
     db.session.commit()
 
-    assert json.loads(read_file(app.config['WHITELIST_FILE'])) != Whitelist.serialise()
+    assert json.loads(read_file(app.config['FTP_WHITELIST_PATH'])) != Whitelist.serialise()
 
     runner.invoke(force_sync)
 
-    assert json.loads(read_file(app.config['WHITELIST_FILE'])) == Whitelist.serialise()
+    assert json.loads(read_file(app.config['FTP_WHITELIST_PATH'])) == Whitelist.serialise()
+
+    backup_dir = tempfile.TemporaryDirectory()
+    backup_dir_path = Path(backup_dir.name)
+
+    app.config['BACKUP_DESTINATION'] = backup_dir_path
+
+    runner.invoke(backup)
+
+    now_ = get_now()
+
+    for source in app.config['BACKUP_SOURCES']:
+        for ((s_root, _, s_files),
+            (d_root, _, d_files)) in zip(host.walk(source),
+                                        os.walk(backup_dir_path / now_ / source)):
+                s_root, d_root = Path(s_root), Path(d_root)
+
+                for s_file, d_file in zip(s_files, d_files):
+                    assert read_file((s_root / s_file).as_posix()) == (d_root / d_file).read_text()

@@ -2,39 +2,52 @@ import os
 import pathlib
 import tempfile
 
+from dotenv import load_dotenv
+load_dotenv()
+
+
+def to_bool(val):
+    return val in ('True', 'true', '1')
+
+
 class Base:
-    CLUB_NAME = os.environ['CLUB_NAME']
     FLASK_DEBUG = False
 
-    DATABASE_FILE = 'database.db'
-    SQLALCHEMY_DATABASE_URI = "sqlite:///" + DATABASE_FILE
-
-    ACCESS_CODE = os.environ['ACCESS_CODE']
-    QUOTA = int(os.environ['QUOTA'])
-    CODE_HASH = os.environ['CODE_HASH'].encode()
-
+    # Site setup
+    CLUB_NAME = os.environ['CLUB_NAME']
     SERVER_IP = os.environ['SERVER_IP']
+    ACCESS_CODE = os.environ['ACCESS_CODE']
+    QUOTA = int(os.environ.get('QUOTA', '4'))
+    CODE_SALT = os.environ['CODE_SALT'].encode()
+    EMAIL_TEMPLATE = os.environ.get('EMAIL_TEMPLATE', '{}')
+    ADMIN_NAME = os.environ.get('ADMIN_NAME')
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
+    DISCORD_URL = os.environ.get('DISCORD_URL')
 
+    # FTP setup
     FTP_ADDRESS = os.environ['FTP_IP']
-    FTP_PORT = 21
-    FTP_USER = os.environ['FTP_USER']
+    FTP_PORT = int(os.environ.get('FTP_PORT', '21'))
+    FTP_USERNAME = os.environ['FTP_USERNAME']
     FTP_PASSWORD = os.environ['FTP_PASSWORD']
-    FTP_BASEDIR = os.environ['FTP_BASEDIR']
-    WHITELIST_FILE = os.environ['WHITELIST_FILE']
+    FTP_WHITELIST_PATH = os.environ.get('FTP_WHITELIST_PATH', 'whitelist.json')
+    FTP_USE_TLS = to_bool(os.environ.get('FTP_USE_TLS', "False"))
 
-    EMAIL_TEMPLATE = os.environ['EMAIL_TEMPLATE']
+    # Backup setup
+    BACKUP_SOURCES = os.environ.get('BACKUP_SOURCES', 'world,world_the_end,world_nether').split(',')
+    BACKUP_DESTINATION = os.environ.get('BACKUP_DESTINATION', 'backups')
+    BACKUP_DIR_FORMAT = os.environ.get('BACKUP_DIR_FORMAT', '%y-%m-%d (%Hh%Mm)')
 
+    # Mail setup
     MAIL_SERVER = os.environ['MAIL_SERVER']
-    MAIL_PORT = 587
-    MAIL_USE_TLS = True
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', '587'))
+    MAIL_USE_TLS = to_bool(os.environ.get('MAIL_USE_TLS', 'True'))
     MAIL_USERNAME = os.environ['MAIL_USERNAME']
     MAIL_SENDER = (CLUB_NAME, MAIL_SERVER)
     MAIL_PASSWORD = os.environ['MAIL_PASSWORD']
 
-    DISCORD_URL = os.environ.get('DISCORD_URL')
-
-    ADMIN_NAME = os.environ['ADMIN_NAME']
-    ADMIN_EMAIL = os.environ['ADMIN_EMAIL']
+    # Database setup
+    DATABASE_FILE = os.environ.get('DATABASE_FILE', 'database.db')
+    SQLALCHEMY_DATABASE_URI = "sqlite:///" + DATABASE_FILE
 
 
 class Debug(Base):
@@ -47,10 +60,13 @@ class Debug(Base):
     ACCESS_CODE = ""
 
     FTP_ADDRESS = "localhost"
-    FTP_BASEDIR = ''
+    FTP_BASEDIR = 'basedir'
+    FTP_WHITELIST_PATH = 'basedir/whitelist.json'
+
+    BACKUP_SOURCES = "basedir,basedir/subdir".split(',')
+    BACKUP_DESTINATION = None
 
     MAIL_SENDER = ("Testing {}".format(Base.CLUB_NAME), Base.MAIL_USERNAME)
-    WHITELIST_FILE = 't-whitelist.json'
 
 
 class Product(Base):

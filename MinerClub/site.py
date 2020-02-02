@@ -1,4 +1,5 @@
 import hashlib
+from pathlib import Path
 
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
@@ -7,7 +8,7 @@ import click
 
 from .emailer import make_activation_email, make_register_email, make_registration_alert_email
 from .config import Product, Messages
-from .mccontrol import get_mj_id, update_whitelist
+from .mccontrol import get_mj_id, update_whitelist, copy_dir, get_now
 from .membership import is_member
 
 app = Flask(__name__)
@@ -33,7 +34,7 @@ class Member(db.Model):
 
     def make_code(self):
         sha = hashlib.sha256()
-        sha.update(app.config['CODE_HASH'])
+        sha.update(app.config['CODE_SALT'])
         for _ in range(10):
             sha.update(self.id.encode())
         return sha.hexdigest()
@@ -167,3 +168,25 @@ def force_sync():
     click.echo("Forcing whitelist sync")
     update_whitelist(Whitelist)
     click.echo("Success")
+
+
+@app.cli.command('backup')
+def backup():
+    sources = app.config['BACKUP_SOURCES']
+    destination = Path(app.config['BACKUP_DESTINATION']) / get_now()
+
+    click.echo("Backing up {} to {}".format(sources, destination))
+
+    click.echo("Making backup directory")
+    destination.mkdir()
+    click.echo("Success")
+
+    for source in sources:
+        sub_dest = destination / source.split('/')[-1]
+        if not sub_dest.exists():
+            sub_dest.mkdir()
+        click.echo("Copying {}".format(source))
+        copy_dir(source, destination)
+        click.echo("Success")
+
+    click.echo("Complete")
