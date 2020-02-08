@@ -1,73 +1,20 @@
-import hashlib
 from pathlib import Path
+import shutil
 
 from flask import Flask, render_template, request
-from flask_sqlalchemy import SQLAlchemy
-from flask_mail import Mail
 import click
 
-from .emailer import make_activation_email, make_register_email, make_registration_alert_email
+from MinerClub.database import Member, Whitelist, db
+
 from .config import Product, Messages
-from .mccontrol import get_mj_id, update_whitelist, copy_dir, get_now
-from .membership import is_member
+from MinerClub.tools.ftp import copy_dir
+from MinerClub.tools.membership import get_mj_id
+from MinerClub.tools.membership import is_member
+from MinerClub.server_comms import update_whitelist, get_now, get_host, outdated_backups
 
 app = Flask(__name__)
 app.config.from_object(Product)
-
-db = SQLAlchemy(app)
-mail = Mail(app)
-
-
-class Member(db.Model):
-    id = db.Column(db.String, primary_key=True)
-    sponsor_code = db.Column(db.String)
-    email = db.Column(db.String)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.sponsor_code = self.make_code()
-        self.email = self.make_email()
-
-    @property
-    def quota(self):
-        return app.config['QUOTA'] - len(self.users)
-
-    def make_code(self):
-        sha = hashlib.sha256()
-        sha.update(app.config['CODE_SALT'])
-        for _ in range(10):
-            sha.update(self.id.encode())
-        return sha.hexdigest()
-
-    def make_email(self):
-        return app.config['EMAIL_TEMPLATE'].format(self.id)
-
-    def send_activate_email(self):
-        mail.send(make_activation_email(self))
-
-
-class Whitelist(db.Model):
-    username = db.Column(db.String, primary_key=True)
-    id = db.Column(db.String, nullable=False)
-    email = db.Column(db.String, nullable=False)
-
-    member_id = db.Column(db.Integer, db.ForeignKey('member.id'),
-                          nullable=False)
-    sponsor = db.relationship('Member',
-                              backref=db.backref('users', lazy=True))
-
-    @classmethod
-    def serialise(cls):
-        entries = cls.query.all()
-        return [entry.to_dict() for entry in entries]
-
-    def to_dict(self):
-        return {'uuid': "{}{}{}{}{}{}{}{}-{}{}{}{}-{}{}{}{}-{}{}{}{}-{}{}{}{}{}{}{}{}{}{}{}{}".format(*self.id),
-                'name': self.username}
-
-    def send_register_emails(self):
-        mail.send(make_register_email(self))
-        mail.send(make_registration_alert_email(self))
+db.init_app(app)
 
 
 @app.route('/')
@@ -143,7 +90,7 @@ def privacy():
     return render_template('privacy.html', title='Privacy Policy', club_name=app.config['CLUB_NAME'])
 
 
-@app.cli.command("init")
+@app.cli.command("init", help="Initialise application database")
 def init_db():
     click.echo("Creating database")
     db.create_all()
@@ -152,7 +99,7 @@ def init_db():
     click.echo("Success")
 
 
-@app.cli.command("reset-db")
+@app.cli.command("reset-db", help="Wipe all database entries")
 def reset_db():
     click.echo("Dropping all tables")
     db.drop_all()
@@ -163,15 +110,25 @@ def reset_db():
     click.echo("Success")
 
 
-@app.cli.command("force-sync")
+@app.cli.command("force-sync", help="Force overwriting of server whitelist with MinerClub whitelist.")
 def force_sync():
     click.echo("Forcing whitelist sync")
     update_whitelist(Whitelist)
     click.echo("Success")
 
 
-@app.cli.command('backup')
-def backup():
+@app.cli.command('backup', help="Perform backup of server folders")
+@click.option('--clean/--no-clean', default=False, help="Delete old backups? (defaults no)")
+def backup(clean):
+    if clean:
+        click.echo("Cleaning up old backups")
+        click.echo("Keeping roation of {} backups".format(app.config['BACKUP_ROTATION']))
+        outdated = outdated_backups()
+        for date, folder in outdated:
+            click.echo("'{}' outdated - removing".format(folder.path, date))
+            shutil.rmtree(folder.path)
+            click.echo("Success")
+
     sources = app.config['BACKUP_SOURCES']
     destination = Path(app.config['BACKUP_DESTINATION']) / get_now()
 
@@ -180,13 +137,13 @@ def backup():
     click.echo("Making backup directory")
     destination.mkdir()
     click.echo("Success")
-
-    for source in sources:
-        sub_dest = destination / source.split('/')[-1]
-        if not sub_dest.exists():
-            sub_dest.mkdir()
-        click.echo("Copying {}".format(source))
-        copy_dir(source, destination)
-        click.echo("Success")
+    with get_host() as host:
+        for source in sources:
+            sub_dest = destination / source.split('/')[-1]
+            if not sub_dest.exists():
+                sub_dest.mkdir()
+            click.echo("Copying {}".format(source))
+            copy_dir(host, source, destination)
+            click.echo("Success")
 
     click.echo("Complete")

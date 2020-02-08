@@ -4,17 +4,20 @@ from pathlib import Path
 import os
 import subprocess
 import tempfile
+import datetime
 
 import pytest
 from flask import render_template
 
 
-from MinerClub import mail, app, db
+from MinerClub import mail, app
+from MinerClub.database import db
 from MinerClub.config import Debug, Messages
-from MinerClub.site import Member, Whitelist, init_db, reset_db, force_sync, backup
-from MinerClub.membership import is_member
-from MinerClub.mccontrol import write_file, read_file, copy_dir, get_host, get_now
-
+from MinerClub.site import reset_db, force_sync, backup
+from MinerClub.database import Member, Whitelist
+from MinerClub.tools.membership import is_member
+from MinerClub.tools.ftp import write_file, read_file, copy_dir
+from MinerClub.server_comms import get_host, get_now, outdated_backups
 
 app.config.from_object(Debug)
 mail.init_app(app)
@@ -52,11 +55,12 @@ def register(client, sponsor_code, email, username):
 
 @pytest.fixture
 def client():
-    db.create_all()
-    with app.test_client() as client:
-        yield client
-    db.drop_all()
-    db.engine.dispose()
+    with app.app_context():
+        db.create_all()
+        with app.test_client() as client:
+            yield client
+        db.drop_all()
+        db.engine.dispose()
     os.remove(app.config['DATABASE_FILE'])
 
 
@@ -75,8 +79,8 @@ def temp_ftp():
                                 '-P', app.config['FTP_PASSWORD'],
                                 '-w'])
 
-    with app.app_context():
-        yield process, get_host()
+    with app.app_context(), get_host() as host:
+        yield process, host
 
     del temp_dir
     process.terminate()
@@ -114,6 +118,7 @@ def test_activate(client):
 
 
 def test_register(client, temp_ftp):
+    _, host = temp_ftp
     resp = activate(client, good_memb_code, good_member)
     resp = register(client, bad_sponse_code, good_email, good_mc_user)
 
@@ -148,7 +153,7 @@ def test_register(client, temp_ftp):
 
     assert user.quota == app.config['QUOTA'] - 2
 
-    assert json.loads(read_file(app.config['FTP_WHITELIST_PATH'])) == test_mj_resp
+    assert json.loads(read_file(host, app.config['FTP_WHITELIST_PATH'])) == test_mj_resp
 
 
 def test_ftp(temp_ftp):
@@ -156,21 +161,20 @@ def test_ftp(temp_ftp):
 
     test_text = f"Definitely did work {time.time()}"
     sub_test_text = test_text + ' SUB'
-
-    write_file("basedir/test.txt", test_text)
-    assert read_file("basedir/test.txt") == test_text
+    write_file(host, "basedir/test.txt", test_text)
+    assert read_file(host, "basedir/test.txt") == test_text
     assert set(host.listdir('basedir')) == {'test.txt', 'subdir'}
 
     sub_file = 'basedir/subdir/subtest.txt'
 
-    write_file(sub_file, sub_test_text)
-    assert read_file(sub_file) == sub_test_text
+    write_file(get_host(), sub_file, sub_test_text)
+    assert read_file(host, sub_file) == sub_test_text
     assert set(host.listdir('basedir/subdir')) == {'subtest.txt'}
 
     to_dir = tempfile.TemporaryDirectory()
     to_path = Path(to_dir.name)
 
-    copy_dir('', to_path)
+    copy_dir(host, '', to_path)
 
     assert (to_path / 'basedir/test.txt').read_text() == test_text
     assert (to_path / 'basedir/subdir/subtest.txt').read_text() == sub_test_text
@@ -178,6 +182,7 @@ def test_ftp(temp_ftp):
 
 def test_cli(client, temp_ftp):
     _, host = temp_ftp
+
     database = Path(app.config['SQLALCHEMY_DATABASE_URI'])
 
     runner = app.test_cli_runner()
@@ -212,11 +217,11 @@ def test_cli(client, temp_ftp):
     db.session.add(w)
     db.session.commit()
 
-    assert json.loads(read_file(app.config['FTP_WHITELIST_PATH'])) != Whitelist.serialise()
+    assert json.loads(read_file(host, app.config['FTP_WHITELIST_PATH'])) != Whitelist.serialise()
 
     runner.invoke(force_sync)
 
-    assert json.loads(read_file(app.config['FTP_WHITELIST_PATH'])) == Whitelist.serialise()
+    assert json.loads(read_file(host, app.config['FTP_WHITELIST_PATH'])) == Whitelist.serialise()
 
     backup_dir = tempfile.TemporaryDirectory()
     backup_dir_path = Path(backup_dir.name)
@@ -234,4 +239,18 @@ def test_cli(client, temp_ftp):
                 s_root, d_root = Path(s_root), Path(d_root)
 
                 for s_file, d_file in zip(s_files, d_files):
-                    assert read_file((s_root / s_file).as_posix()) == (d_root / d_file).read_text()
+                    assert read_file(host, (s_root / s_file).as_posix()) == (d_root / d_file).read_text()
+
+    runner.invoke(backup)
+
+    backups = os.listdir(backup_dir_path)
+    backups.sort(key=lambda backup: datetime.datetime.strptime(backup, app.config['BACKUP_DIR_FORMAT']))
+    outdated = outdated_backups()
+
+    assert backups == [item[1].name for item in outdated]
+
+    runner.invoke(backup, ['--clean'])
+
+    backups = os.listdir(backup_dir_path)
+    assert all(item not in backups for item in outdated) is True
+    assert len(backups) == app.config['BACKUP_ROTATION']

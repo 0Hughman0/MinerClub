@@ -1,8 +1,9 @@
-from flask_mail import Message
-
-from flask import current_app, url_for, render_template
+from flask import current_app, render_template
+from flask_mail import Message, Mail
 
 from .config import Messages
+
+mail = Mail()
 
 
 def make_activation_email(member):
@@ -22,12 +23,6 @@ def make_registration_alert_email(entry):
     text = render_template('registration_alert_email.txt',
                            entry=entry,
                            sponsor=spons)
-                           #member_id=spons.id,
-                           #username=entry.username,
-                           #left=spons.quota,
-                           #users=spons.users,
-                           #admin_name=current_app.config['ADMIN_NAME'],
-                           #admin_email=current_app.config['ADMIN_EMAIL'])
     return make_email(spons.email, Messages.REGISTRATION_ALERT_SUBJECT, text)
 
 

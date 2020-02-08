@@ -45,7 +45,7 @@ whitelist with a remove server over FTP.
 |    `MAIL_PASSWORD`   |           Password          |                 -                | Password to connect to mail server with. (If using Gmail I recommend setting up an app password).                           |
 |    `DATABASE_FILE`   |     path/to/database.db     |            database.db           | Path to database file... not sure why you'd change this!                                                                    |
 
-5. Navigate to the `MinerClub/data/members.csv` file and replace the examples with the 'Membership IDs' of your members
+5. Navigate to the `members.csv` file and replace the examples with the 'Membership IDs' of your members
 (one per line). When users activate their accounts, the name they provide must be in this file. In most cases I'd expect
 this to be a list of emails (meaning that `EMAIL_TEMPLATE={}`).
 6. Make any changes you want to the template files, in particular the email templates and the privacy policy template.
@@ -66,7 +66,7 @@ To assist with any manual changes, the app provides both the (get shell) `gs.bat
 you can use (shell tools) `from st import *` to import a few helper functions/ variables.
 
 The app also includes a backup tool that can fetch copies of remote directories on the FTP server and store a local copy with
-a timestamp. This is done with the command `flask backup` and will behave according to your configuration. You might want
+a timestamp. This is done with the command `backup` and will behave according to your configuration. You might want
 to use something like cron to schedule regular running of this command.
 
 ## Notes

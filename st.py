@@ -1,6 +1,5 @@
 from MinerClub import app, db, mail
-from MinerClub.site import Member, Whitelist
-
+from MinerClub.database import Member, Whitelist
 
 users = Member.query.all()
 whitelist = Whitelist.query.all()

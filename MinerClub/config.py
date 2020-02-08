@@ -36,6 +36,7 @@ class Base:
     BACKUP_SOURCES = os.environ.get('BACKUP_SOURCES', 'world,world_the_end,world_nether').split(',')
     BACKUP_DESTINATION = os.environ.get('BACKUP_DESTINATION', 'backups')
     BACKUP_DIR_FORMAT = os.environ.get('BACKUP_DIR_FORMAT', '%y-%m-%d (%Hh%Mm)')
+    BACKUP_ROTATION = int(os.environ.get('BACKUP_ROTATION', '3'))
 
     # Mail setup
     MAIL_SERVER = os.environ['MAIL_SERVER']
@@ -65,6 +66,8 @@ class Debug(Base):
 
     BACKUP_SOURCES = "basedir,basedir/subdir".split(',')
     BACKUP_DESTINATION = None
+    BACKUP_ROTATION = 1
+    BACKUP_DIR_FORMAT = '%y-%m-%d (%Hh%Mm%Ss%fms)'
 
     MAIL_SENDER = ("Testing {}".format(Base.CLUB_NAME), Base.MAIL_USERNAME)
 
