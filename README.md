@@ -61,13 +61,13 @@ The app provides the following additional commands (ran by `pipenv run flask com
 
 * `reset-db` - This completely clears the database.
 * `force-sync` - This forces the app to sync the current whitelist version with the server (useful if making manual changes)
+* `backup --clean` or `backup --no-clean` - This creates a local copy of server directories from your config (defaults to
+'world', 'world_nether' and 'world_the_end').
+
+For slightly more info, run `pipenv run flask --help`.
 
 To assist with any manual changes, the app provides both the (get shell) `gs.bat` and `gs.sh` scripts. Once in a shell
 you can use (shell tools) `from st import *` to import a few helper functions/ variables.
-
-The app also includes a backup tool that can fetch copies of remote directories on the FTP server and store a local copy with
-a timestamp. This is done with the command `backup` and will behave according to your configuration. You might want
-to use something like cron to schedule regular running of this command.
 
 ## Notes
 
@@ -82,4 +82,4 @@ reload the whitelist for these changes to take effect. Most server hosts provide
 automatically run a `whitelist reload` command. (You might also be able to achieve this through plugins).
 
 Once everything is set up you can run the set of integration tests using `pipenv run pytest` to check everything is
-working fine.
+working fine (they take a little while!).
