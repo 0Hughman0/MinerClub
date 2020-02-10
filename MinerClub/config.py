@@ -19,6 +19,7 @@ class Base:
     ACCESS_CODE = os.environ['ACCESS_CODE']
     QUOTA = int(os.environ.get('QUOTA', '4'))
     CODE_SALT = os.environ['CODE_SALT'].encode()
+    USE_MEMBERS_LIST = to_bool(os.environ.get('USER_MEMBERS_LIST', 'True'))
     EMAIL_TEMPLATE = os.environ.get('EMAIL_TEMPLATE', '{}')
     ADMIN_NAME = os.environ.get('ADMIN_NAME')
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')

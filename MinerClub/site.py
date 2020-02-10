@@ -30,7 +30,7 @@ def activate():
         if request.form.get('code') != app.config['ACCESS_CODE']:
             return render_template("message.html", bad=Messages.WRONG_ACCESS_CODE)
 
-        if not is_member(member_id):
+        if app.config['USE_MEMBERS_LIST'] and not is_member(member_id):
             return render_template("message.html", bad=Messages.WRONG_MEMBER_ID)
 
         if Member.query.get(member_id) is not None:

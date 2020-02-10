@@ -55,6 +55,7 @@ def register(client, sponsor_code, email, username):
 
 @pytest.fixture
 def client():
+    app.config.from_object(Debug)
     with app.app_context():
         db.create_all()
         with app.test_client() as client:
@@ -115,6 +116,17 @@ def test_activate(client):
     assert user.quota == app.config['QUOTA']
     assert user.id == good_member
     assert user.email == app.config['EMAIL_TEMPLATE'].format(good_member)
+
+    app.config['USE_MEMBERS_LIST'] = False
+
+    resp = activate(client, good_memb_code, bad_member)
+
+    assert resp == render_template("message.html",
+                                   good=Messages.ACTIVATE_SUCCESS.format(
+                                       email=app.config['EMAIL_TEMPLATE'].format(bad_member)))
+    member = Member.query.get(bad_member)
+
+    assert member.id == bad_member
 
 
 def test_register(client, temp_ftp):

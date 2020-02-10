@@ -25,6 +25,7 @@ whitelist with a remove server over FTP.
 |     `ACCESS_CODE`    |      XXXXXXXXXXXXXXXXX      |                 -                | Code required for users to enter to prove membership of club.                                                               |
 |        `QUOTA`       |              4              |                 4                |  The number of whitelist entries each member is allowed (including the member)                                              |
 |      `CODE_SALT`     |      XXXXXXXXXXXXXXXXX      |                 -                | Salt applied to member names to generate register urls. Set to something unpredictable.                                     |
+|  `USE_MEMBERS_LIST`  |            False            |               True               | Check `members.csv` for Membership ID to check for membership, or `False` to allow anyone with access code.                 |
 |   `EMAIL_TEMPLATE`   |           {}@host           |                 {}               | Template to generate email address from members list. (fills {} with member id)                                             |
 |     `ADMIN_NAME`     |          Admin Name         |              (blank)             | Name of administrator.                                                                                                      |
 |     `ADMIN_EMAIL`    |        admin@host.com       |              (blank)             | Contact details of whoever maintains the website/ server.                                                                   |
@@ -46,8 +47,9 @@ whitelist with a remove server over FTP.
 |    `DATABASE_FILE`   |     path/to/database.db     |            database.db           | Path to database file... not sure why you'd change this!                                                                    |
 
 5. Navigate to the `members.csv` file and replace the examples with the 'Membership IDs' of your members
-(one per line). When users activate their accounts, the name they provide must be in this file. In most cases I'd expect
-this to be a list of emails (meaning that `EMAIL_TEMPLATE={}`).
+(one per line), or set `USE_MEMBERS_LIST=False` in your config to allow anyone with the access code to join. If `True`,
+when users activate their accounts, the name they provide must be in this file. In most cases I'd expect this to be a
+list of emails (meaning that `EMAIL_TEMPLATE={}`).
 6. Make any changes you want to the template files, in particular the email templates and the privacy policy template.
 Note that because these are rendered by the flask application, you can access the app config object.
 7. Set the environment vairable `FLASK_APP=MinerClub:app`
