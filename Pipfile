@@ -6,6 +6,10 @@ verify_ssl = true
 [dev-packages]
 pytest = "*"
 pyftpdlib = "*"
+pyopenssl = "*"
+v = {editable = true,version = "*"}
+coverage = "*"
+sftpserver = "*"
 
 [packages]
 flask = "*"
@@ -14,6 +18,8 @@ python-dotenv = "*"
 requests = "*"
 ftputil = "*"
 flask-mail = "*"
+paramiko = "*"
+pysftp = "*"
 
 [requires]
 python_version = "3.7"

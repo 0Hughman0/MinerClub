@@ -2,7 +2,7 @@
 {% block body %}
     <div class="card-text">
         <p>Welcome to the {{ club_name }} Miner Club website</p>
-        <p>If you are a member of {{ club_name }}, you need to <a href="{{ url_for('activate') }}">activate your account</a>,
-            if you're a friend of a {{ club_name }} member, you need to <a href="{{ url_for('register') }}">register</a>.</p>
+        <p>If you are a member of {{ club_name }}, you need to <a href="{{ url_for('minerclub.activate') }}">activate your account</a>,
+            if you're a friend of a {{ club_name }} member, you need to <a href="{{ url_for('minerclub.register') }}">register</a>.</p>
     </div>
 {% endblock %}

@@ -2,26 +2,23 @@ import time
 import json
 from pathlib import Path
 import os
-import subprocess
-import tempfile
 import datetime
 
 import pytest
+
 from flask import render_template
 
-
-from MinerClub import mail, app
+from MinerClub import mail, create_app
 from MinerClub.database import db
 from MinerClub.config import Debug, Messages
 from MinerClub.site import reset_db, force_sync, backup
 from MinerClub.database import Member, Whitelist
-from MinerClub.tools.membership import is_member
-from MinerClub.tools.ftp import write_file, read_file, copy_dir
-from MinerClub.server_comms import get_host, get_now, outdated_backups
+from MinerClub.membership import is_member
+from MinerClub.server_comms import file_manager, get_now, outdated_backups
 
-app.config.from_object(Debug)
-mail.init_app(app)
-db.init_app(app)
+from .helpers import TestFTPServer, TestSFTPServer
+
+app = create_app('debug')
 
 test_mj_resp = [{"uuid": "f8cdb683-9e90-43ee-a819-39f85d9c5d69", "name": "mollstam"},
                 {"uuid": "7125ba8b-1c86-4508-b92b-b5c042ccfe2b", "name": "KrisJelbring"}]
@@ -66,25 +63,42 @@ def client():
 
 
 @pytest.fixture
-def temp_ftp():
-    temp_dir = tempfile.TemporaryDirectory()
-    base_dir = os.path.join(temp_dir.name, app.config['FTP_BASEDIR'])
-    os.mkdir(base_dir)
-    sub_dir = os.path.join(base_dir, 'subdir')
-    os.mkdir(sub_dir)
-    process = subprocess.Popen(['python', '-m', 'pyftpdlib',
-                                '-n', '127.0.0.1',
-                                '-d', temp_dir.name,
-                                '-p', str(app.config['FTP_PORT']),
-                                '-u', app.config['FTP_USERNAME'],
-                                '-P', app.config['FTP_PASSWORD'],
-                                '-w'])
+def server_filesystem(tmp_path):
+    base_dir = tmp_path / 'basedir'
+    base_dir.mkdir()
+    sub_dir = base_dir / 'subdir'
+    sub_dir.mkdir()
+    yield tmp_path
 
-    with app.app_context(), get_host() as host:
-        yield process, host
 
-    del temp_dir
-    process.terminate()
+@pytest.fixture(params=file_manager.engines.keys())
+def with_engine(server_filesystem, monkeypatch, request):
+    server_home = server_filesystem
+    engine = request.param
+    monkeypatch.setitem(app.config, 'FILE_ENGINE', engine)
+
+    with app.app_context():
+        if engine in ('FTP', 'FTPS'):
+            server = TestFTPServer(file_manager.username,
+                                   file_manager.password,
+                                   file_manager.address,
+                                   file_manager.port,
+                                   file_manager.engine_name == 'FTPS',
+                                   server_home.as_posix())
+        elif engine == 'SFTP':
+            server = TestSFTPServer(file_manager.username,
+                                   file_manager.password,
+                                   file_manager.address,
+                                   file_manager.port, server_home.as_posix())
+        else:
+            monkeypatch.setitem(app.config, 'LOCAL_SERVER_DIR', server_home)
+            server = None
+
+        if not server:
+            yield server_home
+        else:
+            with server:
+                yield server_home
 
 
 def test_member():
@@ -129,8 +143,8 @@ def test_activate(client):
     assert member.id == bad_member
 
 
-def test_register(client, temp_ftp):
-    _, host = temp_ftp
+def test_register(client, with_engine, server_filesystem):
+
     resp = activate(client, good_memb_code, good_member)
     resp = register(client, bad_sponse_code, good_email, good_mc_user)
 
@@ -165,35 +179,35 @@ def test_register(client, temp_ftp):
 
     assert user.quota == app.config['QUOTA'] - 2
 
-    assert json.loads(read_file(host, app.config['FTP_WHITELIST_PATH'])) == test_mj_resp
+    with file_manager.get_host() as host:
+        assert json.loads(file_manager.read_text(host, file_manager.whitelist)) == test_mj_resp
 
 
-def test_ftp(temp_ftp):
-    _, host = temp_ftp
+def test_engines(with_engine, server_filesystem, tmp_path_factory):
+
+    host = file_manager.get_host()
 
     test_text = f"Definitely did work {time.time()}"
     sub_test_text = test_text + ' SUB'
-    write_file(host, "basedir/test.txt", test_text)
-    assert read_file(host, "basedir/test.txt") == test_text
-    assert set(host.listdir('basedir')) == {'test.txt', 'subdir'}
+    file_manager.write_text(host, "basedir/test.txt", test_text)
+    assert file_manager.read_text(host, "basedir/test.txt") == test_text
+    assert set(file_manager.listdir(host, 'basedir')) == {'test.txt', 'subdir'}
 
     sub_file = 'basedir/subdir/subtest.txt'
 
-    write_file(get_host(), sub_file, sub_test_text)
-    assert read_file(host, sub_file) == sub_test_text
-    assert set(host.listdir('basedir/subdir')) == {'subtest.txt'}
+    file_manager.write_text(file_manager.get_host(), sub_file, sub_test_text)
+    assert file_manager.read_text(host, sub_file) == sub_test_text
+    assert set(file_manager.listdir(host, 'basedir/subdir')) == {'subtest.txt'}
 
-    to_dir = tempfile.TemporaryDirectory()
-    to_path = Path(to_dir.name)
+    tmp_path = tmp_path_factory.mktemp('backup')
 
-    copy_dir(host, '', to_path)
+    file_manager.copy_dir(host, 'basedir', tmp_path)
 
-    assert (to_path / 'basedir/test.txt').read_text() == test_text
-    assert (to_path / 'basedir/subdir/subtest.txt').read_text() == sub_test_text
+    assert (tmp_path / 'basedir/test.txt').read_text() == test_text
+    assert (tmp_path / 'basedir/subdir/subtest.txt').read_text() == sub_test_text
 
 
-def test_cli(client, temp_ftp):
-    _, host = temp_ftp
+def test_cli(client, monkeypatch, with_engine, tmp_path, server_filesystem):
 
     database = Path(app.config['SQLALCHEMY_DATABASE_URI'])
 
@@ -208,7 +222,7 @@ def test_cli(client, temp_ftp):
     assert len(Member.query.all()) > 0
     assert len(Whitelist.query.all()) > 0
 
-    runner.invoke(reset_db)
+    assert runner.invoke(reset_db).exception is None
 
     assert len(Member.query.all()) == 0
     assert len(Whitelist.query.all()) == 0
@@ -229,40 +243,51 @@ def test_cli(client, temp_ftp):
     db.session.add(w)
     db.session.commit()
 
-    assert json.loads(read_file(host, app.config['FTP_WHITELIST_PATH'])) != Whitelist.serialise()
+    with file_manager.get_host() as host:
+        assert json.loads(file_manager.read_text(host, file_manager.whitelist)) != Whitelist.serialise()
 
-    runner.invoke(force_sync)
+    assert runner.invoke(force_sync).exception is None
 
-    assert json.loads(read_file(host, app.config['FTP_WHITELIST_PATH'])) == Whitelist.serialise()
+    with file_manager.get_host() as host:
+        assert json.loads(file_manager.read_text(host, file_manager.whitelist)) == Whitelist.serialise()
 
-    backup_dir = tempfile.TemporaryDirectory()
-    backup_dir_path = Path(backup_dir.name)
-
-    app.config['BACKUP_DESTINATION'] = backup_dir_path
-
-    runner.invoke(backup)
+    backups_dir = tmp_path / 'backups'
+    backups_dir.mkdir()
+    monkeypatch.setitem(app.config, 'BACKUP_DESTINATION', backups_dir)
 
     now_ = get_now()
 
-    for source in app.config['BACKUP_SOURCES']:
-        for ((s_root, _, s_files),
-            (d_root, _, d_files)) in zip(host.walk(source),
-                                        os.walk(backup_dir_path / now_ / source)):
-                s_root, d_root = Path(s_root), Path(d_root)
+    assert runner.invoke(backup).exception is None
 
-                for s_file, d_file in zip(s_files, d_files):
-                    assert read_file(host, (s_root / s_file).as_posix()) == (d_root / d_file).read_text()
+    first_backup = backups_dir / now_
 
-    runner.invoke(backup)
+    with file_manager.get_host() as host:
+        for source in app.config['BACKUP_SOURCES']:
+            source_files = list(file_manager.walk(host, source))
+            destination_files = list(os.walk(first_backup / source))
 
-    backups = os.listdir(backup_dir_path)
+            assert len(source_files) == len(destination_files)
+
+            for ((s_root, _, s_files), (d_root, _, d_files)) in zip(source_files, destination_files):
+                    s_root, d_root = Path(s_root), Path(d_root)
+
+                    for s_file, d_file in zip(s_files, d_files):
+                        assert file_manager.read_text(host, (s_root / s_file).as_posix()) == (d_root / d_file).read_text()
+
+    monkeypatch.setitem(app.config, 'BACKUP_DIR_FORMAT', '%y-%m-%d (%Hh%Mm%Ss%fms)')
+
+    first_backup.rename(first_backup.with_name(get_now()))
+
+    assert runner.invoke(backup).exception is None
+
+    backups = os.listdir(backups_dir)
     backups.sort(key=lambda backup: datetime.datetime.strptime(backup, app.config['BACKUP_DIR_FORMAT']))
     outdated = outdated_backups()
 
     assert backups == [item[1].name for item in outdated]
 
-    runner.invoke(backup, ['--clean'])
+    assert runner.invoke(backup, ['--cycle']).exception is None
 
-    backups = os.listdir(backup_dir_path)
+    backups = os.listdir(backups_dir)
     assert all(item not in backups for item in outdated) is True
     assert len(backups) == app.config['BACKUP_ROTATION']

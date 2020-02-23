@@ -25,13 +25,34 @@ class Base:
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
     DISCORD_URL = os.environ.get('DISCORD_URL')
 
-    # FTP setup
-    FTP_ADDRESS = os.environ['FTP_IP']
-    FTP_PORT = int(os.environ.get('FTP_PORT', '21'))
-    FTP_USERNAME = os.environ['FTP_USERNAME']
-    FTP_PASSWORD = os.environ['FTP_PASSWORD']
-    FTP_WHITELIST_PATH = os.environ.get('FTP_WHITELIST_PATH', 'whitelist.json')
-    FTP_USE_TLS = to_bool(os.environ.get('FTP_USE_TLS', "False"))
+    # File setup
+    FILE_ENGINE = os.environ.get('FILE_ENGINE', 'FTP')
+
+    if FILE_ENGINE == 'FTP':
+        FTP_WHITELIST_PATH = os.environ.get('FILE_ENGINE_SERVER_WHITELIST_PATH', 'whitelist.json')
+        FTP_SERVER_ADDRESS = os.environ['FTP_SERVER_ADDRESS']
+        FTP_SERVER_USERNAME = os.environ['FTP_SERVER_USERNAME']
+        FTP_SERVER_PASSWORD = os.environ['FTP_SERVER_PASSWORD']
+        FTP_SERVER_PORT = int(os.environ.get('FILE_ENGINE_SERVER_PORT', '21'))
+
+    if FILE_ENGINE == 'FTPS':
+        FTPS_WHITELIST_PATH = os.environ.get('FTPS_WHITELIST_PATH', 'whitelist.json')
+        FTPS_SERVER_ADDRESS = os.environ['FTPS_SERVER_ADDRESS']
+        FTPS_SERVER_USERNAME = os.environ['FTPS_SERVER_USERNAME']
+        FTPS_SERVER_PASSWORD = os.environ['FTPS_SERVER_PASSWORD']
+        FTPS_SERVER_PORT = int(os.environ.get('FTPS_SERVER_PORT', '21'))
+
+    if FILE_ENGINE == 'SFTP':
+        SFTP_WHITELIST_PATH = os.environ.get('SFTP_WHITELIST_PATH', 'whitelist.json')
+        SFTP_SERVER_ADDRESS = os.environ['SFTP_SERVER_ADDRESS']
+        SFTP_SERVER_USERNAME = os.environ['SFTP_SERVER_USERNAME']
+        SFTP_SERVER_PASSWORD = os.environ['SFTP_SERVER_PASSWORD']
+        SFTP_SERVER_PORT = int(os.environ.get('SFTP_SERVER_PORT', '22'))
+        SFTP_HOSTKEY_CHECK = to_bool(os.environ.get('SFTP_ENGINE_HOSTKEY_CHECK', 'True'))
+
+    if FILE_ENGINE == 'LOCAL':
+        LOCAL_SERVER_DIR = os.environ['LOCAL_ENGINE_SERVER_HOME']
+        LOCAL_WHITELIST_PATH = os.environ.get('SFTP_WHITELIST_PATH', 'whitelist.json')
 
     # Backup setup
     BACKUP_SOURCES = os.environ.get('BACKUP_SOURCES', 'world,world_the_end,world_nether').split(',')
@@ -61,14 +82,32 @@ class Debug(Base):
 
     ACCESS_CODE = ""
 
-    FTP_ADDRESS = "localhost"
-    FTP_BASEDIR = 'basedir'
-    FTP_WHITELIST_PATH = 'basedir/whitelist.json'
+    FTP_SERVER_ADDRESS = '127.0.0.1'
+    FTP_SERVER_WHITELIST_PATH = 'basedir/whitelist.json'
+    FTP_SERVER_PORT = 21
+    FTP_SERVER_USERNAME = 'FTP username'
+    FTP_SERVER_PASSWORD = 'FTP test_password'
+
+    FTPS_WHITELIST_PATH = 'basedir/whitelist.json'
+    FTPS_SERVER_ADDRESS = '127.0.0.1'
+    FTPS_SERVER_PORT = 21
+    FTPS_SERVER_USERNAME = 'FTPS username'
+    FTPS_SERVER_PASSWORD = 'FTPS test_password'
+
+    SFTP_WHITELIST_PATH = 'basedir/whitelist.json'
+    SFTP_SERVER_ADDRESS = '127.0.0.1'
+    SFTP_SERVER_PORT = 22
+    SFTP_HOSTKEY_CHECK = False
+    SFTP_SERVER_USERNAME = 'SFTP username'
+    SFTP_SERVER_PASSWORD = 'SFTP test_password'
+
+    LOCAL_WHITELIST_PATH = 'basedir/whitelist.json'
+    LOCA_SERVER_DIR = None
 
     BACKUP_SOURCES = "basedir,basedir/subdir".split(',')
     BACKUP_DESTINATION = None
     BACKUP_ROTATION = 1
-    BACKUP_DIR_FORMAT = '%y-%m-%d (%Hh%Mm%Ss%fms)'
+    BACKUP_DIR_FORMAT = 'Testing Backup'
 
     MAIL_SENDER = ("Testing {}".format(Base.CLUB_NAME), Base.MAIL_USERNAME)
 

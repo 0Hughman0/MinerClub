@@ -7,7 +7,7 @@ only allows Minecraft players with certain usernames to join.
 
 All you need to do to add yourself to the whitelist is to follow this link:
 
-{{ url_for('register', sponsor_code=member.sponsor_code, _external=True) }}
+{{ url_for('minerclub.register', sponsor_code=member.sponsor_code, _external=True) }}
 
 And fill it in!
 
