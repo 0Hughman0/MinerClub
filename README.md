@@ -7,7 +7,7 @@ Users first activate their accounts, verifying their identity by providing an ac
 
 After this, an email is sent to them with a unique link that allows them and a defined quota of users to add their names to the whitelist.
 
-The list of registered Minecraft usernames Miner Club generates a whitelist automatically and then syncs this whitelist with a remove server over FTP.
+The list of registered Minecraft usernames Miner Club generates a whitelist automatically and then syncs this whitelist with a remove server over SFTP, FTPS or FTP.
 
 ## Getting started
 
