@@ -91,14 +91,14 @@ when users activate their accounts, the name they provide must be in this file. 
 list of emails (meaning that `EMAIL_TEMPLATE={}`).
 6. Make any changes you want to the template files, in particular the email templates and the privacy policy template.
 Note that because these are rendered by the flask application, you can access the `app.config` object and the `member` or `whitelist` object.
-7. Set the environment vairable `FLASK_APP=MinerClub:app`
+7. Set the environment vairable `FLASK_APP=app`
 8. Initialise the database by entering `pipenv run flask minerclub init`
 8. Run the server using your preferred method. Note that I thoroughly recommend using https in order to ensure security.
 9. Set your Minecraft server to refresh the whitelist regularly.
 
 ## Additional Helpers
 
-The app provides the following additional commands (ran by `pipenv run flask minerclub command-name`):
+The app provides the following additional commands (ran with `pipenv run flask minerclub command-name`):
 
 * `reset-db` - This completely clears the database.
 * `force-sync` - This forces the app to sync the current whitelist version with the server (useful if making manual changes)
