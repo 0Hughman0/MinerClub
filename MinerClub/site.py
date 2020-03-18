@@ -10,11 +10,13 @@ from .config import Product, Messages
 from MinerClub.tools.ftp import copy_dir
 from MinerClub.tools.membership import get_mj_id
 from MinerClub.tools.membership import is_member
+from MinerClub.emailer import mail
 from MinerClub.server_comms import update_whitelist, get_now, get_host, outdated_backups
 
 app = Flask(__name__)
 app.config.from_object(Product)
 db.init_app(app)
+mail.init_app(app)
 
 
 @app.route('/')

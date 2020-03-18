@@ -20,8 +20,6 @@ from MinerClub.tools.ftp import write_file, read_file, copy_dir
 from MinerClub.server_comms import get_host, get_now, outdated_backups
 
 app.config.from_object(Debug)
-mail.init_app(app)
-db.init_app(app)
 
 test_mj_resp = [{"uuid": "f8cdb683-9e90-43ee-a819-39f85d9c5d69", "name": "mollstam"},
                 {"uuid": "7125ba8b-1c86-4508-b92b-b5c042ccfe2b", "name": "KrisJelbring"}]
