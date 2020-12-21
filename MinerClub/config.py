@@ -7,12 +7,7 @@ load_dotenv()
 
 
 class Required:
-
-    def __set_name__(self, owner, name):
-        self.name = name
-
-    def __get__(self, instance, owner):
-        raise ValueError(f"Required config value {self.name} not set")
+    pass
 
 
 def to_bool(val):
@@ -23,11 +18,11 @@ class Base:
     FLASK_DEBUG: bool = None
 
     # Site setup
-    CLUB_NAME: str = Required()
-    SERVER_IP: str = Required()
-    ACCESS_CODE: str = Required()
+    CLUB_NAME: str = Required
+    SERVER_IP: str = Required
+    ACCESS_CODE: str = Required
     QUOTA: int = 4
-    CODE_SALT: bytes = Required()
+    CODE_SALT: bytes = Required
     USE_MEMBERS_LIST: bool = True
     EMAIL_TEMPLATE: str = '{}'
     ADMIN_NAME: str = ''
@@ -38,25 +33,25 @@ class Base:
     FILE_ENGINE: str = 'SFTP'
 
     FTP_WHITELIST_PATH: str = 'whitelist.json'
-    FTP_SERVER_ADDRESS: str = Required()
-    FTP_SERVER_USERNAME: str = Required()
-    FTP_SERVER_PASSWORD: str = Required()
+    FTP_SERVER_ADDRESS: str = Required
+    FTP_SERVER_USERNAME: str = Required
+    FTP_SERVER_PASSWORD: str = Required
     FTP_SERVER_PORT: int = 21
 
     FTPS_WHITELIST_PATH: str = 'whitelist.json'
-    FTPS_SERVER_ADDRESS: str = Required()
-    FTPS_SERVER_USERNAME: str = Required()
-    FTPS_SERVER_PASSWORD: str = Required()
+    FTPS_SERVER_ADDRESS: str = Required
+    FTPS_SERVER_USERNAME: str = Required
+    FTPS_SERVER_PASSWORD: str = Required
     FTPS_SERVER_PORT: int = 21
 
     SFTP_WHITELIST_PATH: str = 'whitelist.json'
-    SFTP_SERVER_ADDRESS: str = Required()
-    SFTP_SERVER_USERNAME: str = Required()
-    SFTP_SERVER_PASSWORD: str = Required()
+    SFTP_SERVER_ADDRESS: str = Required
+    SFTP_SERVER_USERNAME: str = Required
+    SFTP_SERVER_PASSWORD: str = Required
     SFTP_SERVER_PORT: int = 22
     SFTP_HOSTKEY_CHECK: bool = True
     
-    LOCAL_SERVER_DIR: str = Required()
+    LOCAL_SERVER_DIR: str = Required
     LOCAL_WHITELIST_PATH: str = 'whitelist.json'
 
     # Backup setup
@@ -66,12 +61,12 @@ class Base:
     BACKUP_ROTATION: int = 3
 
     # Mail setup
-    MAIL_SERVER: str = Required()
+    MAIL_SERVER: str = Required
     MAIL_PORT: int = 587
     MAIL_USE_TLS: bool = True
-    MAIL_USERNAME: str = Required()
-    MAIL_SENDER: tuple = Required()
-    MAIL_PASSWORD: str = Required()
+    MAIL_USERNAME: str = Required
+    MAIL_SENDER: tuple = Required
+    MAIL_PASSWORD: str = Required
 
     # Database setup
     DATABASE_FILE: str = 'database.db'
@@ -84,6 +79,8 @@ def from_env(key, post=lambda v: v):
         return post(os.environ[key])
     except KeyError:
         default = getattr(Base, key)
+        if default is Required:
+            raise ValueError(f"Required config value {key} not set")
         return default
 
 

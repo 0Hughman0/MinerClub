@@ -91,16 +91,11 @@ The list of registered Minecraft usernames Miner Club generates a whitelist auto
 when users activate their accounts, the name they provide must be in this file. In most cases I'd expect this to be a
 list of emails (meaning that `EMAIL_TEMPLATE={}`).
 6. Make any changes you want to the template files, in particular the email templates and the privacy policy template.
-Note that because these are rendered by the flask application, you can access the `app.config` object and the `member` or `whitelist` object.
+Note that because these Jinja2 templates are rendered by the flask application, you can access the `app.config` object and the `member` or `whitelist` object.
 7. Set the environment variable `FLASK_APP=app`
 8. Initialise the database by entering `pipenv run flask minerclub init`
 8. Run the server using your preferred method. Note that I thoroughly recommend using https in order to ensure security.
 9. Set your Minecraft server to refresh the whitelist regularly.
-
-## Customisation
-
-This is a Flask app and hence makes use of Jinja2 templating. You are welcome (and encouraged) to make your own changes
-to the `.html` and `.txt` templates found in the `MinerClub/templates` directory.
 
 ## Additional Helpers
 
