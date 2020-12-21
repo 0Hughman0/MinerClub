@@ -26,15 +26,15 @@ def activate():
 
         if request.form.get('code') != current_app.config['ACCESS_CODE']:
             code = request.form.get('code')
-            current_app.logger.warn('Invalid access code provided "{}"'.format(code))
+            current_app.logger.warning('Invalid access code provided "{}"'.format(code))
             return render_template("message.html", bad=Messages.WRONG_ACCESS_CODE)
 
         if current_app.config['USE_MEMBERS_LIST'] and not is_member(member_id):
-            current_app.logger.warn('Invalid member ID provided "{}"'.format(member_id))
+            current_app.logger.warning('Invalid member ID provided "{}"'.format(member_id))
             return render_template("message.html", bad=Messages.WRONG_MEMBER_ID)
 
         if Member.query.get(member_id) is not None:
-            current_app.logger.warn('Attempt to re-activate account "{}"'.format(member_id))
+            current_app.logger.warning('Attempt to re-activate account "{}"'.format(member_id))
             return render_template("message.html", bad=Messages.ALREADY_ACTIVATED)
 
         current_app.logger.debug("Creating new member entry for {}".format(member_id))

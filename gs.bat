@@ -1,2 +1,2 @@
 set FLASK_APP=MinerClub:app
-flask shell
+pipenv run flask shell

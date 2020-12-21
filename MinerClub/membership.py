@@ -20,7 +20,7 @@ def get_mj_id(username):
     Returns None if no user with that name found.
     """
     p = requests.post("https://api.mojang.com/profiles/minecraft", data='["{}"]'.format(username))
-    if p.json():
+    if p.status_code == 200 and p.json():
         return p.json()[0]['id']
     else:
         return None

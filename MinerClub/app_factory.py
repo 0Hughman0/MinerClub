@@ -4,13 +4,10 @@ from logging.handlers import TimedRotatingFileHandler
 
 from flask import Flask
 from flask.logging import default_handler
-from .config import Debug, Product
+from .config import get_config
 
 from .site import minerclub, db
 from .emailer import mail
-
-configs = {'debug': Debug,
-           'product': Product}
 
 
 def create_app(config='product'):
@@ -23,7 +20,7 @@ def create_app(config='product'):
     app.logger.addHandler(rot_handler)
     app.logger.addHandler(default_handler)
 
-    app.config.from_object(configs[config])
+    app.config.from_object(get_config(config))
 
     app.register_blueprint(minerclub)
     db.init_app(app)

@@ -31,7 +31,8 @@ The list of registered Minecraft usernames Miner Club generates a whitelist auto
 |     `DISCORD_URL`    | https://discord.gg/XXXXXXXX |              (blank)             | Link sent to users for them to join Discord server.                                                                         |
 |   `BACKUP_SOURCES`   |        dir1,dir2,dir3       | world,world_the_end,world_nether |  Comma separated list of paths to directories to backup using the backup command. (Paths relative to the top-level FTP dir) |
 | `BACKUP_DESTINATION` |         path/to/dir         |              backups             |  Path to directory to store backups in. This can be relative to cwd or an absolute path.                                    |
-|  `BACKUP_DIR_FORMAT` |      %y-%m-%d (%Hh%Mm)      |         %y-%m-%d (%Hh%Mm)        | Format string filled using `datetime.strftime` to timestamp directories for a given backup.                                 |
+|  `BACKUP_DIR_FORMAT` |      %y-%m-%d (%Hh%Mm)      |         %y-%m-%d_(%Hh%Mm)        | Format string filled using `datetime.strftime` to timestamp directories for a given backup.                                 |
+|  `BACKUP_ROTATION`   |              1              |                 3                | Number of newest backups will preserve. Outdated backups will be deleted unless --no-cycle specified (see below).           |
 |     `MAIL_SERVER`    |       some.server.com       |                 -                | Address of mail server.                                                                                                     |
 |      `MAIL_PORT`     |             587             |                587               | Port to connect to on mail server.                                                                                          |
 |    `MAIL_USE_TLS`    |             True            |               True               | Use TLS encryption for mail sending (depends on mail server config).                                                        |
@@ -91,10 +92,15 @@ when users activate their accounts, the name they provide must be in this file. 
 list of emails (meaning that `EMAIL_TEMPLATE={}`).
 6. Make any changes you want to the template files, in particular the email templates and the privacy policy template.
 Note that because these are rendered by the flask application, you can access the `app.config` object and the `member` or `whitelist` object.
-7. Set the environment vairable `FLASK_APP=app`
+7. Set the environment variable `FLASK_APP=app`
 8. Initialise the database by entering `pipenv run flask minerclub init`
 8. Run the server using your preferred method. Note that I thoroughly recommend using https in order to ensure security.
 9. Set your Minecraft server to refresh the whitelist regularly.
+
+## Customisation
+
+This is a Flask app and hence makes use of Jinja2 templating. You are welcome (and encouraged) to make your own changes
+to the `.html` and `.txt` templates found in the `MinerClub/templates` directory.
 
 ## Additional Helpers
 
@@ -124,3 +130,8 @@ automatically run a `whitelist reload` command. (You might also be able to achie
 
 Once everything is set up you can run the set of integration tests using `pipenv run pytest` to check everything is
 working fine (they take a little while!).
+
+## More Notes
+
+If you are having trouble with installation of dependencies like bcrypt and cryptography, make sure you are using the
+latest version of pip (this caused me an immense deal of frustration recently!)

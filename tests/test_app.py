@@ -10,7 +10,7 @@ from flask import render_template
 
 from MinerClub import mail, create_app
 from MinerClub.database import db
-from MinerClub.config import Debug, Messages
+from MinerClub.config import get_config, Messages
 from MinerClub.site import reset_db, force_sync, backup
 from MinerClub.database import Member, Whitelist
 from MinerClub.membership import is_member
@@ -18,7 +18,8 @@ from MinerClub.server_comms import file_manager, get_now, outdated_backups
 
 from .helpers import TestFTPServer, TestSFTPServer
 
-app = create_app('debug')
+TestingConfig = get_config('testing')
+app = create_app('testing')
 
 test_mj_resp = [{"uuid": "f8cdb683-9e90-43ee-a819-39f85d9c5d69", "name": "mollstam"},
                 {"uuid": "7125ba8b-1c86-4508-b92b-b5c042ccfe2b", "name": "KrisJelbring"}]
@@ -52,7 +53,7 @@ def register(client, sponsor_code, email, username):
 
 @pytest.fixture
 def client():
-    app.config.from_object(Debug)
+    app.config.from_object(TestingConfig)
     with app.app_context():
         db.create_all()
         with app.test_client() as client:
@@ -101,6 +102,21 @@ def with_engine(server_filesystem, monkeypatch, request):
                 yield server_home
 
 
+def test_config_loading():
+    testing_as_dict = {k: str(getattr(TestingConfig, k)) for k in dir(TestingConfig) if not k.startswith('__')}
+    os.environ.update(testing_as_dict)
+    get_config('product')
+
+    del os.environ['SFTP_SERVER_ADDRESS']
+
+    with pytest.raises(ValueError, match='Required config value SFTP_SERVER_ADDRESS not set'):
+        get_config('product')
+
+    os.environ['FILE_ENGINE'] = 'FTP'  # should switch to FTP config, so won't miss SFTP_SERVER_ADDRESS
+
+    get_config('product')
+
+
 def test_member():
     assert is_member(good_member) is True
     assert is_member(bad_member) is False
@@ -122,7 +138,10 @@ def test_activate(client):
                                    email=app.config['EMAIL_TEMPLATE'].format(good_member)))
 
     assert len(outbox) == 1
-    assert outbox[0].subject == Messages.ACTIVATION_SUBJECT
+
+    CLUB_NAME = app.config['CLUB_NAME']
+
+    assert outbox[0].subject == Messages.ACTIVATION_SUBJECT.format(CLUB_NAME=CLUB_NAME)
     assert '{{' not in outbox[0].body
 
     user = Member.query.get(good_member)
@@ -159,9 +178,11 @@ def test_register(client, with_engine, server_filesystem):
     with mail.record_messages() as outbox:
         resp = register(client, user.sponsor_code, good_email, good_mc_user)
 
+    CLUB_NAME = app.config['CLUB_NAME']
+
     assert len(outbox) == 2
-    assert outbox[0].subject == Messages.REGISTRATION_SUBJECT
-    assert outbox[1].subject == Messages.REGISTRATION_ALERT_SUBJECT
+    assert outbox[0].subject == Messages.REGISTRATION_SUBJECT.format(CLUB_NAME=CLUB_NAME)
+    assert outbox[1].subject == Messages.REGISTRATION_ALERT_SUBJECT.format(CLUB_NAME=CLUB_NAME)
     assert '{{' not in outbox[0].body
     assert '{{' not in outbox[1].body
 
@@ -274,7 +295,7 @@ def test_cli(client, monkeypatch, with_engine, tmp_path, server_filesystem):
                     for s_file, d_file in zip(s_files, d_files):
                         assert file_manager.read_text(host, (s_root / s_file).as_posix()) == (d_root / d_file).read_text()
 
-    monkeypatch.setitem(app.config, 'BACKUP_DIR_FORMAT', '%y-%m-%d (%Hh%Mm%Ss%fms)')
+    monkeypatch.setitem(app.config, 'BACKUP_DIR_FORMAT', '%y-%m-%d_(%Hh%Mm%Ss%fms)')
 
     first_backup.rename(first_backup.with_name(get_now()))
 

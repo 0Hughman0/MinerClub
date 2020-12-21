@@ -4,22 +4,21 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-pytest = "*"
-pyftpdlib = "*"
-pyopenssl = "*"
-v = {editable = true,version = "*"}
-coverage = "*"
-sftpserver = "*"
+pytest = "~=5.3"
+pyftpdlib = "~=1.5"
+pyopenssl = "~=19.1"
+coverage = "~=5.0"
+sftpserver = "~=0.3"
 
 [packages]
-flask = "*"
-flask-sqlalchemy = "*"
-python-dotenv = "*"
-requests = "*"
-ftputil = "*"
-flask-mail = "*"
-paramiko = "*"
-pysftp = "*"
+flask = "~=1.1"
+flask-sqlalchemy = "~=2.4"
+python-dotenv = "~=0.11"
+requests = "~=2.23"
+ftputil = "~=3.4"
+flask-mail = "~=0.9"
+paramiko = "~=2.7"
+pysftp = "~=0.2"
 
 [requires]
 python_version = "3.7"
