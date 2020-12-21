@@ -95,7 +95,7 @@ Note that because these Jinja2 templates are rendered by the flask application, 
 7. Set the environment variable `FLASK_APP=app`
 8. Initialise the database by entering `pipenv run flask minerclub init`
 8. Run the server using your preferred method. Note that I thoroughly recommend using https in order to ensure security.
-9. Set your Minecraft server to refresh the whitelist regularly.
+9. Set your Minecraft server to refresh the whitelist regularly. You can do this with a Cron job.
 
 ## Additional Helpers
 
